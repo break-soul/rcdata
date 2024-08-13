@@ -1,0 +1,15 @@
+[project]
+name = "rcdata"
+version = "0.1.0"
+description = "Default template for PDM package"
+authors = [
+    {name = "break-soul", email = "57186766+break-soul@users.noreply.github.com"},
+]
+dependencies = []
+requires-python = ">=3.8.*"
+readme = "README.md"
+license = {text = "MIT"}
+
+
+[tool.pdm]
+distribution = false
