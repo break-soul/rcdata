@@ -7,6 +7,7 @@ import json
 from pathlib import Path
 from functools import lru_cache
 
+
 @lru_cache(4)
 def get_zstd(i: int = 0):
     """
@@ -23,9 +24,10 @@ def get_zstd(i: int = 0):
         raise ImportError("You need to install zstandard to use this function")
     return zstd
 
+
 @lru_cache(4)
-def get_encrypt(i: int = 0):
-    ...
+def get_encrypt(i: int = 0): ...
+
 
 def mkdir(path: str) -> int:
     """
@@ -47,7 +49,8 @@ def mkdir(path: str) -> int:
         return 20
     return 0
 
-def load(path: str, compact: bool = False, encrypt:bool = False) -> dict:
+
+def load(path: str, compact: bool = False, encrypt: bool = False) -> dict:
     """
     Load data from a file.
 
@@ -61,11 +64,11 @@ def load(path: str, compact: bool = False, encrypt:bool = False) -> dict:
         with open(path, "r", encoding="utf-8") as file:
             return json.load(file)
     else:
-        with open(path, 'rb') as file:
-            return json.loads(get_zstd(1).\
-                decompress(file.read()).decode('utf-8'))
+        with open(path, "rb") as file:
+            return json.loads(get_zstd(1).decompress(file.read()).decode("utf-8"))
 
-def sync(data, path, compact: bool = False, encrypt:bool = False):
+
+def sync(data: dict, path: str, compact: bool = False, encrypt: bool = False):
     """
     Sync data to a file.
     """
@@ -73,6 +76,7 @@ def sync(data, path, compact: bool = False, encrypt:bool = False):
         with open(path, "w", encoding="utf-8") as file:
             json.dump(data, file)
     else:
-        with open(path, 'wb') as file:
-            file.write(get_zstd(0).\
-                compress(json.dumps(data).encode('utf-8')))  # 压缩并写入文件
+        with open(path, "wb") as file:
+            file.write(
+                get_zstd(0).compress(json.dumps(data).encode("utf-8"))
+            )  # 压缩并写入文件
