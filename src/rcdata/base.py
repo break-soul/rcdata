@@ -4,6 +4,7 @@ Common base class for all data
 
 from typing import TYPE_CHECKING, Any, Union, overload
 
+from .io import load, sync
 
 class _MISSING_TYPE:
     pass
@@ -97,14 +98,54 @@ class Base:
         env_p: int = 3,
         file_p: int = 2,
         default_p: int = 1,
+        compact: bool = False,
+        encrypt: bool = False,
+        data_type: bytes = b"\x00\x00\x00",
+        hash_type: bool = False,
         **kw,
     ) -> None:
+        """
+            Args:
+                path (Union[str, None], optional): path to the data file. Defaults to None.
+            # priority of data, higher priority will overwrite lower priority
+                init_p (int, optional): priority of init data. Defaults to 4.
+                env_p (int, optional): priority of env data. Defaults to 3.
+                file_p (int, optional): priority of file data. Defaults to 2.
+                default_p (int, optional): priority of default data. Defaults to 1.
+            # data processing
+                compact (bool, optional): compact the data. Defaults to False. 
+                    if compact is True, will find compact_type in the kw, and use the compact_type to compact the data.
+                compact_type (str, optional): compact type. Defaults to "zstd".
+                encrypt (bool, optional): encrypt the data. Defaults to False.
+                    if encrypt is True, will find encrypt_type in the kw, and use the encrypt_type to encrypt the data.
+                encrypt_type (str, optional): encrypt type. Defaults to "edrsa".
+                data_type (bytes, optional): data type. Defaults to b"\x00\x00\x00".
+                hash_type (bool, optional): hash the data. Defaults to False.
+                    if hash is True, will find hash_type in the kw, and use the hash_type to hash the data.
+                hash_type (str, optional): hash type. Defaults to "sha256".
+        """
         self._path = path
+        self._compact = compact
+        self._encrypt = encrypt
+        self._data_type = data_type
+        self._hash = hash_type
         self._p = {init_p: self._load_init, env_p: self._load_env, file_p: self._load_file, default_p: self._load_default}
         self._kw = kw
-        self._load_data(**kw)
+        self._dump_config()
+        self._load_data()
+    
+    def _dump_config(self) -> None:
+        if self._compact:
+            self._compact_type = self.kw.get("compact_type", "zstd")
+            del self.kw["compact_type"]
+        if self._encrypt:
+            self._encrypt_type = self.kw.get("encrypt_type", "edrsa")
+            del self.kw["encrypt_type"]
+        if self._hash:
+            self._hash_type = self.kw.get("hash_type", "sha256")
+            del self.kw["hash_type"]
 
-    def _load_data(self, **kw) -> None:
+    def _load_data(self) -> None:
         _p = list(self._p.keys())
         _p.sort(reverse=False)
         for p in _p:
@@ -116,4 +157,4 @@ class Base:
     def _load_init(self):...
     def _load_env(self):...
     def _load_file(self):...
-    def _load_default(self):...
+    def _load_default(self):... # Useless, used only as a placeholder
