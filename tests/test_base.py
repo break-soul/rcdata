@@ -1,11 +1,11 @@
 
 import sys
 
-sys.path.append(r'G:\py\pypi\rcdata\src\rcdata')
+sys.path.append(r'G:\py\pypi\rcdata\src')
 
-from base import Base, Field
+from rcdata import BaseData, Field
 
-class TestBaseData(Base):
+class TestBaseData(BaseData):
     name = Field("default_name", str)
     age = Field(30, int)
 
@@ -20,3 +20,5 @@ print(obj.age)  # 输出: 25
 
 obj.custom_attr = "custom_value"  # 写入 __dict__
 print(obj.custom_attr)  # 输出: custom_value
+
+print(dir(obj))

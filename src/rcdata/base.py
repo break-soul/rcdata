@@ -4,7 +4,7 @@ Common base class for all data
 
 import os
 
-from typing import TYPE_CHECKING, Any, Union, overload
+from typing import Any, Union, List, overload
 
 from .io import load, sync
 
@@ -76,14 +76,14 @@ class Field:
             func(self.default, owner, name)
 
 
-class Base:
+class BaseData:
     """
     Common base class for all data
 
     attr = Field(default,type,**kw)
     """
 
-    def __new__(cls) -> "Base":
+    def __new__(cls) -> "BaseData":
         fields = dict()
         for _name, _field in cls.__dict__.items():
             if getattr(_field, "_FIELD", None) is not None:
@@ -110,7 +110,7 @@ class Base:
         """
         Args:
             path (Union[str, None], optional): path to the data file. Defaults to None.
-        # priority of data, higher priority will overwrite lower priority
+        # priority of data, higher priority will overwrite lower priority, -1 to disable
             init_p (int, optional): priority of init data. Defaults to 4.
             env_p (int, optional): priority of env data. Defaults to 3.
             file_p (int, optional): priority of file data. Defaults to 2.
@@ -122,6 +122,7 @@ class Base:
             encrypt (bool, optional): encrypt the data. Defaults to False.
                 if encrypt is True, will find encrypt_type in the kw, and use the encrypt_type to encrypt the data.
             encrypt_type (str, optional): encrypt type. Defaults to "edrsa".
+            key (str, optional): key for encrypt. Defaults to None.
             data_type (bytes, optional): data type. Defaults to b"\x00\x00\x00".
             hash_type (bool, optional): hash the data. Defaults to False.
                 if hash is True, will find hash_type in the kw, and use the hash_type to hash the data.
@@ -159,6 +160,7 @@ class Base:
         if self._encrypt:
             self._encrypt_type = self._kw.pop("encrypt_type", "edrsa")
             self._prime = self._kw.pop("prime", 0b111)
+            self._key = self._kw.pop("key", None)
             self._mate["encrypt_type"] = self._encrypt_type
             self._mate["prime"] = self._prime
         if self._hash:
@@ -166,6 +168,7 @@ class Base:
             self._mate["hash_type"] = self._hash_type
 
     def _load_data(self) -> None:
+        self._p.pop(-1, None)
         for p in sorted(self._p.keys()):
             self._p[p]()
         for field in self._fields.values():
@@ -189,8 +192,8 @@ class Base:
 
     def _load_default(self): ...  # Useless, used only as a placeholder
 
-    def __dir__(self) -> list[str]:
-        return list(self._fields.values())
+    def __dir__(self) -> List[str]:
+        return list(self._fields.keys())
 
     def _write_data(self) -> dict:
         data = dict()
