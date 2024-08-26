@@ -2,102 +2,118 @@
 Common base class for all data
 """
 
-import os
-import json
-from pathlib import Path
-
-from typing import Any
+from typing import TYPE_CHECKING, Any, Union, overload
 
 
-class BaseData:
+class _MISSING_TYPE:
+    pass
+
+
+MISSING = _MISSING_TYPE()
+
+
+class Field:
+    # __slots__ = ("name", "type", "default", "required")
+
+    _FIELD = "Field"
+
+    def __init__(
+        self,
+        default: Any = MISSING,
+        default_type: Any = MISSING,
+    ) -> None:
+        if default is MISSING and default_type is MISSING:
+            raise ValueError("default or default_type must be provided")
+        if default is not MISSING and default_type is not MISSING:
+            if self.check_type(default, default_type):
+                self.default = default
+                self.type = default_type
+            else:
+                raise ValueError("default value does not match the type")
+        else:
+            if default is not MISSING:
+                self.type = type(default)
+            else:
+                self.type = default_type
+            self.default = default
+        self.data = default
+
+    # region check_type
+    @overload
+    def check_type(self) -> bool: ...
+    @overload
+    def check_type(self, value: Any) -> bool: ...
+    @overload
+    def check_type(self, value: Any, type_: type) -> bool: ...
+    def check_type(self, value: Any = MISSING, type_: type = MISSING) -> bool:
+        if value is MISSING:
+            return isinstance(self.data, self.type)
+        if type_ is MISSING:
+            return isinstance(value, self.type)
+        return isinstance(value, type_)
+
+    # endregion
+
+    def __repr__(self) -> str:
+        return f"{self._FIELD}(default={self.default}, type={self.type})"
+
+    def set_name(self, name: str) -> None:
+        self.name = name
+
+    def set_data(self, data: Any) -> None:
+        if self.check_type(data):
+            self.data = data
+        else:
+            raise ValueError("data does not match the type")
+
+    def __set_name__(self, owner, name):
+        func = getattr(type(self.default),"__set_name__",None)
+        if func:
+            func(self.default, owner, name)
+
+
+class Base:
     """
     Common base class for all data
+
+    attr = Field(default,type,**kw)
     """
 
-    def __init__(self, defaults: dict):
-        object.__setattr__(self, "_defaults", defaults)  # 默认值，不能修改
-        self._data = {}  # 实际数据
+    def __new__(cls) -> "Base":
+        fields = dict()
+        for _name, _field in cls.__dict__.items():
+            if getattr(_field, "_FIELD", None) is not None:
+                _field.set_name(_name)
+                fields[_name] = _field
+        obj = super().__new__(cls)
+        obj._fields = fields
+        return obj
 
-    def __getattr__(self, name):
-        """
-        Args:
-            name: str, the key name to be found.
-        Look in __dict__; if not found, then check _data and _defaults.
-        """
-        if name in self.__dict__:
-            return self.__dict__[name]
-        if name in self._data:
-            return self._data[name]
-        if name in self._defaults:
-            return self._defaults[name]
+    def __init__(
+        self,
+        /,
+        path: Union[str, None] = None,
+        init_p: int = 4,
+        env_p: int = 3,
+        file_p: int = 2,
+        default_p: int = 1,
+        **kw,
+    ) -> None:
+        self._path = path
+        self._p = {init_p: self._load_init, env_p: self._load_env, file_p: self._load_file, default_p: self._load_default}
+        self._kw = kw
+        self._load_data(**kw)
 
-        raise AttributeError(
-            f"'{self.__class__.__name__}' object has no attribute '{name}'"
-        )
+    def _load_data(self, **kw) -> None:
+        _p = list(self._p.keys())
+        _p.sort(reverse=False)
+        for p in _p:
+            self._p[p]()
+        for field in self._fields.values():
+            self.__setattr__(field.name, field.data)
 
-    def __setattr__(self, name: str, value: Any):
-        """
-        Args:
-            name: str, the key name to be set.
-            value: Any, the value to be set.
-        Check if the specified key name exists in the _defaults dictionary.
-        If the key exists, write the value value into the _data dictionary.
-        When the key does not exist, directly set the object's attribute using object.__setattr__.
-        """
-        if name in self._defaults:
-            self._data[name] = value
-        else:
-            object.__setattr__(self, name, value)
-
-    @staticmethod
-    def mkdir(path: str) -> int:
-        """
-        Args:
-            file_path (str): file path
-
-        Returns:
-            int: status
-                - 0: success
-                - 11: directory exists
-                - 20: failed to create directory
-        """
-        dir_path = Path(path).parent
-        if path.isdir(path):
-            return 11
-        try:
-            os.makedirs(dir_path)
-        except Exception:  # pylint: disable=broad-exception-caught
-            return 20
-        return 0
-
-    def load(self, path: str, compact: bool = False) -> dict:
-        """
-        Load data from a file.
-
-        Args:
-            path (str): file path
-
-        Returns:
-            dict: data
-        """
-        if not compact:
-            with open(path, "r", encoding="utf-8") as file:
-                self._data = json.load(file)
-        else:
-            from zstandard import ZstdDecompressor
-            with open(path, 'rb') as file:
-                self._data = json.loads(ZstdDecompressor().\
-                    decompress(file.read()).decode('utf-8'))
-
-    def sync(self, path, compact: bool = False):
-        """
-        Sync data to a file.
-        """
-        if not compact:
-            with open(path, "w", encoding="utf-8") as file:
-                json.dump(self._data, file)
-        else:
-            from zstandard import ZstdCompressor
-            with open(path, 'wb') as file:
-                file.write(ZstdCompressor().\
-                    compress(json.dumps(self._data).encode('utf-8')))  # 压缩并写入文件
+                
+    def _load_init(self):...
+    def _load_env(self):...
+    def _load_file(self):...
+    def _load_default(self):...
