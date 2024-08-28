@@ -1,6 +1,6 @@
 [project]
 name = "rcdata"
-version = "0.2.0"
+version = "0.3.0"
 description = "Default template for PDM package"
 authors = [
     { name = "break-soul", email = "57186766+break-soul@users.noreply.github.com" },

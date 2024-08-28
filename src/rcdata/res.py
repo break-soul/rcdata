@@ -1,16 +1,20 @@
 import os
-from tkinter import N
+from typing import Union, Tuple
 from .base import BaseData, Field
 
 
-def get_file_extension(file_path: str) -> str:
+def get_file_extension(file_path: str) -> Tuple[str, str]:
     return os.path.splitext(file_path)
 
 
 class Resource(BaseData):
     """The `Resource` class is a subclass of `BaseData` and is used to represent a resource file."""
+
     name = Field("", str)
-    def __init__(self, path: str | None = None, /, encrypt: bool = False, **kw) -> None:
+
+    def __init__(
+        self, path: str, /, encrypt: bool = False, **kw
+    ) -> None:
         _, extension = get_file_extension(path)
         if extension == ".resource":
             compact = False
@@ -62,7 +66,7 @@ class ResourceIndex(BaseData):
         for file in self.file_list:
             try:
                 path = os.path.join(self.root, file)
-                res = Resource(path=path, encrypt=encrypt, key = self.key)
+                res = Resource(path=path, encrypt=encrypt, key=self.key)
                 self.res_dict[file] = res
             except Exception:
                 pass
