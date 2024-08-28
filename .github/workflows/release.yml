@@ -24,6 +24,9 @@ jobs:
   pypi-publish:
     name: upload release to PyPI
     runs-on: ubuntu-latest
+    environment:
+      name: pypi
+      url: https://pypi.org/p/rcdata
     permissions:
       # This permission is needed for private repositories.
       contents: read
@@ -41,13 +44,11 @@ jobs:
       - name: Build package
         run: |
           pdm build
-      - name: Build package
-        run: |
-          pdm build
-      - name: Retrieve release distributions
-        uses: actions/download-artifact@v4
-        with:
-          name: release-dists
-          path: dist/
       - name: Publish release distributions to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
+      - name: upload result
+        if: success()
+        uses: actions/upload-artifact@v3
+        with :
+          name: python-wheel
+          path: dist/*.whl
