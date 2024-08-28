@@ -16,7 +16,7 @@ class _MISSING_TYPE:
 MISSING = _MISSING_TYPE()
 
 
-class Field:
+class Field(Any):
     __slots__ = ("default", "type", "data", "name")
 
     _FIELD = "Field"
