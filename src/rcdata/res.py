@@ -41,7 +41,7 @@ class ResourceIndex(BaseData):
     file_list = Field([], list)
     file_hash = Field({}, dict)
 
-    def __init__(self, path: str | None = None, key: str = None, /, **kw) -> None:
+    def __init__(self, path: str, key: str = None, /, **kw) -> None:
         self.root, extension = get_file_extension(path)
         self.key = key
         if extension == ".index":
