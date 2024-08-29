@@ -7,6 +7,8 @@ import json
 from pathlib import Path
 from functools import lru_cache
 
+from typing import Tuple
+
 
 @lru_cache(4)
 def get_zstd(i: int = 0):
@@ -26,7 +28,63 @@ def get_zstd(i: int = 0):
 
 
 @lru_cache(4)
-def get_encrypt(i: int = 0): ...
+def get_encrypt():
+    try:
+        from cryptography.hazmat.primitives.asymmetric import ed25519
+        from cryptography.hazmat.primitives import serialization
+    except ImportError:
+        raise ImportError("You need to install cryptography to use this function")
+    return ed25519, serialization
+
+
+def new_key() -> Tuple[bytes]:
+    """
+    Generate a new key
+    """
+    ed25519, serialization = get_encrypt()
+    # 生成Ed25519密钥对
+    private_key = ed25519.Ed25519PrivateKey.generate()
+    public_key = private_key.public_key()
+    # 序列化公钥
+    public_key = public_key.public_bytes(
+        encoding=serialization.Encoding.PEM,
+        format=serialization.PublicFormat.SubjectPublicKeyInfo,
+    )
+
+    # 序列化私钥
+    private_key = private_key.private_bytes(
+        encoding=serialization.Encoding.PEM,
+        format=serialization.PrivateFormat.PKCS8,
+        encryption_algorithm=serialization.NoEncryption(),
+    )
+    return private_key, public_key
+
+
+def encrypt(data: bytes, private_key: bytes, public_key: bytes) -> bytes:
+    """
+    Encrypt data with ed25519 key
+    """
+    _, serialization = get_encrypt()
+    # 反序列化私钥
+    private_key = serialization.load_pem_private_key(
+        private_key,
+        password=None,
+    )
+    # 签名消息
+    signature = private_key.sign(data)
+
+    print("Signature:")
+    print(signature)
+
+    # 验证签名
+    try:
+        public_key = serialization.load_der_public_key(public_key)
+        public_key.verify(signature, data)
+        print("Signature is valid.")
+    except Exception as e:
+        print("Signature is invalid:", e)
+
+    return signature
 
 
 def mkdir(path: str) -> int:

@@ -1,5 +1,5 @@
 import os
-from typing import Union, Tuple
+from typing import Tuple
 from .base import BaseData, Field
 
 
@@ -12,9 +12,7 @@ class Resource(BaseData):
 
     name = Field("", str)
 
-    def __init__(
-        self, path: str, /, encrypt: bool = False, **kw
-    ) -> None:
+    def __init__(self, path: str, /, encrypt: bool = False, **kw) -> None:
         _, extension = get_file_extension(path)
         if extension == ".resource":
             compact = False
