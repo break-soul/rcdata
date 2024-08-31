@@ -273,8 +273,11 @@ class BaseData:
             None
         """
         for field in self._fields.values():
-            if field.name in source:
-                field.set_data(source[field.name])
+            try:
+                if field.name in source:
+                    field.set_data(source[field.name])
+            except:
+                ...
 
     def _load_init(self):
         """
@@ -306,7 +309,7 @@ class BaseData:
         """
         if self._path is not None:
             try:
-                data = load(self._path, self._compact, self._encrypt).get("data")
+                data = load(self._path, self._compact, self._encrypt).get("data", {})
             except FileNotFoundError:
                 sync(self._mate, self._path, self._compact, self._encrypt)
                 data = {}
