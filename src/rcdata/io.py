@@ -73,16 +73,9 @@ def encrypt(data: bytes, private_key: bytes, public_key: bytes) -> bytes:
     # 签名消息
     signature = private_key.sign(data)
 
-    print("Signature:")
-    print(signature)
-
     # 验证签名
-    try:
-        public_key = serialization.load_der_public_key(public_key)
-        public_key.verify(signature, data)
-        print("Signature is valid.")
-    except Exception as e:
-        print("Signature is invalid:", e)
+    public_key = serialization.load_der_public_key(public_key)
+    public_key.verify(signature, data)
 
     return signature
 
@@ -99,7 +92,7 @@ def mkdir(path: str) -> int:
             - 20: failed to create directory
     """
     dir_path = Path(path).parent
-    if path.isdir(path):
+    if os.path.isdir(path):
         return 11
     try:
         os.makedirs(dir_path)
@@ -130,6 +123,8 @@ def sync(data: dict, path: str, compact: bool = False, encrypt: bool = False):
     """
     Sync data to a file.
     """
+    if not os.path.exists(path):
+        mkdir(path)
     if not compact:
         with open(path, "w", encoding="utf-8") as file:
             json.dump(data, file)

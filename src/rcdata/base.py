@@ -70,8 +70,8 @@ class _Field:
     @overload
     def check_type(self, value: Any) -> bool: ...
     @overload
-    def check_type(self, value: Any, type_: type) -> bool: ...
-    def check_type(self, value: Any = MISSING, type_: type = MISSING) -> bool:
+    def check_type(self, value: Any, type_: "type") -> bool: ...
+    def check_type(self, value: Any = MISSING, type_: "type" = MISSING) -> bool:
         if value is MISSING:
             return isinstance(self.data, self.type)
         if type_ is MISSING:
@@ -228,7 +228,7 @@ class BaseData:
             "version": 0,
             "compact": self._compact,
             "encrypt": self._encrypt,
-            "type": self._data_type,
+            "type": str(self._data_type),
             "hash": self._hash,
         }
         if self._compact:
@@ -305,7 +305,11 @@ class BaseData:
         and then calls the `_load_fields` method to populate the fields with the loaded data.
         """
         if self._path is not None:
-            data = load(self._path, self._compact, self._encrypt).get("data")
+            try:
+                data = load(self._path, self._compact, self._encrypt).get("data")
+            except FileNotFoundError:
+                sync(self._mate, self._path, self._compact, self._encrypt)
+                data = {}
             self._load_fields(data)
 
     def _load_default(self):
