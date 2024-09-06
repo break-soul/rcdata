@@ -101,7 +101,9 @@ def mkdir(path: str) -> int:
     return 0
 
 
-def load(path: str, compact: bool = False, encrypt: bool = False) -> dict:
+def load(
+    path: str, *, compact: bool = False, encrypt: bool = False, micro_code: bool = False
+) -> dict:
     """
     Load data from a file.
 
@@ -119,7 +121,14 @@ def load(path: str, compact: bool = False, encrypt: bool = False) -> dict:
             return json.loads(get_zstd(1).decompress(file.read()).decode("utf-8"))
 
 
-def sync(data: dict, path: str, compact: bool = False, encrypt: bool = False):
+def sync(
+    data: dict,
+    *,
+    path: str,
+    compact: bool = False,
+    encrypt: bool = False,
+    micro_code: bool = False,
+):
     """
     Sync data to a file.
     """

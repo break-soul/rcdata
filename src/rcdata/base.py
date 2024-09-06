@@ -4,7 +4,7 @@ Common base class for all data
 
 import os
 
-from typing import Any, Union, List, overload
+from typing import Any, Tuple, Union, List, overload
 
 from .io import load, sync
 
@@ -14,6 +14,46 @@ class _MISSING_TYPE:
 
 
 MISSING = _MISSING_TYPE()
+
+
+class Version(object):
+    @overload
+    def __init__(self, ver_str: str): ...  # "1.0.0"
+    def __init__(self, *args, **kw):
+        self.version: Tuple[int, int, int] = self.dump_version(*args, **kw)
+        if self.version is None:
+            raise ValueError("version must be provided")
+
+    @staticmethod
+    def dump_version(*args, **kw) -> Union[Tuple[int, int, int], None]:
+        def _str_ver(ver_str: str) -> Tuple[int, int, int]:
+            return tuple(map(int, ver_str.split(".")))
+        if args:
+            return _str_ver(args[0])
+        ver_str: Union[str, bool] = kw.get("ver_str", False)
+        if ver_str:
+            return _str_ver(ver_str)
+
+    def __repr__(self) -> str:
+        return f"Version({self.version[0]}.{self.version[1]}.{self.version[2]})"
+    
+    def __eq__(self, other: "Version") -> bool:
+        return self.version == other.version
+
+    def __ne__(self, other: "Version") -> bool:
+        return self.version != other.version
+
+    def __lt__(self, other: "Version") -> bool:
+        return self.version < other.version
+
+    def __le__(self, other: "Version") -> bool:
+        return self.version <= other.version
+
+    def __gt__(self, other: "Version") -> bool:
+        return self.version > other.version
+
+    def __ge__(self, other: "Version") -> bool:
+        return self.version >= other.version
 
 
 class _Field:
